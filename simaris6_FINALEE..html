@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMARIS - Professional Risk Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        .menu-active { @apply bg-blue-600 text-white shadow-lg; }
+        .menu-inactive { @apply text-gray-400 hover:bg-slate-800 hover:text-white; }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800" x-data="riskApp()" x-init="initCharts()">
+
+    <div id="login-page" x-show="!isLoggedIn" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-blue-900 p-4">
+        <div class="bg-white w-full max-w-[900px] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[550px]">
+            <div class="md:w-5/12 bg-blue-600 p-10 text-white flex flex-col justify-center items-center text-center relative overflow-hidden">
+                <div class="relative z-10">
+                    <div class="bg-white w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <i class="fas fa-shield-alt text-4xl text-blue-600"></i>
+                    </div>
+                    <h1 class="text-4xl font-extrabold tracking-tighter mb-2">SIMARIS</h1>
+                    <p class="text-blue-100 text-sm leading-relaxed">Sistem Informasi Manajemen Risiko Organisasi Secara Real-Time.</p>
+                </div>
+                <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500 rounded-full opacity-50"></div>
+            </div>
+            <div class="md:w-7/12 p-12 bg-white flex flex-col justify-center">
+                <div class="mb-10">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-1">Selamat Datang</h2>
+                    <p class="text-slate-400">Silakan login untuk mengakses sistem SIMARIS</p>
+                </div>
+                <form @submit.prevent="handleLogin" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Username / Email</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><i class="fas fa-user"></i></span>
+                            <input type="text" required placeholder="admin@simaris.id" class="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><i class="fas fa-lock"></i></span>
+                            <input type="password" required placeholder="••••••••" class="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-[0.98]">
+                        <i class="fas fa-sign-in-alt mr-2"></i> Login
+                    </button>
+                </form>
+                <p class="text-center mt-10 text-xs text-slate-400 uppercase tracking-widest font-bold">© 2024 SIMARIS — Risk Solution</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-system" x-show="isLoggedIn" x-cloak class="flex min-h-screen">
+        <aside class="w-64 bg-slate-900 text-white flex flex-col fixed h-full z-30">
+            <div class="p-6 flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg"><i class="fas fa-shield-alt"></i></div>
+                <span class="font-bold text-xl tracking-tighter">SIMARIS</span>
+            </div>
+            <nav class="flex-1 px-4 space-y-1">
+                <button @click="currentTab = 'dashboard'" :class="currentTab === 'dashboard' ? 'menu-active' : 'menu-inactive'" class="w-full flex items-center gap-3 p-3 rounded-xl transition-all">
+                    <i class="fas fa-th-large w-5"></i> Dashboard
+                </button>
+                <div class="pt-4 pb-2 px-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Manajemen Risiko</div>
+                <button @click="currentTab = 'penilaian'" :class="currentTab === 'penilaian' ? 'menu-active' : 'menu-inactive'" class="w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm">
+                    <i class="fas fa-clipboard-check w-5"></i> Penilaian Risiko
+                </button>
+                <button @click="currentTab = 'mitigasi'" :class="currentTab === 'mitigasi' ? 'menu-active' : 'menu-inactive'" class="w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm">
+                    <i class="fas fa-tasks w-5"></i> Status Mitigasi
+                </button>
+                <button @click="currentTab = 'profil'" :class="currentTab === 'profil' ? 'menu-active' : 'menu-inactive'" class="w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm">
+                    <i class="fas fa-user-shield w-5"></i> Profil Risiko
+                </button>
+                <button @click="currentTab = 'pemantauan'" :class="currentTab === 'pemantauan' ? 'menu-active' : 'menu-inactive'" class="w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm">
+                    <i class="fas fa-chart-pie w-5"></i> Pemantauan Unit
+                </button>
+                <button @click="isLoggedIn = false" class="w-full flex items-center gap-3 p-3 rounded-xl text-red-400 hover:bg-red-500/10 mt-10 text-sm">
+                    <i class="fas fa-power-off w-5"></i> Keluar
+                </button>
+            </nav>
+        </aside>
+
+        <main class="flex-1 ml-64 flex flex-col">
+            <header class="bg-white/80 backdrop-blur-md sticky top-0 z-20 px-8 py-4 border-b flex justify-between items-center">
+                <h2 class="text-xl font-bold capitalize" x-text="currentTab.replace('-', ' ')"></h2>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <p class="text-sm font-bold">Admin Utama</p>
+                        <p class="text-[10px] text-slate-400 uppercase">Administrator</p>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name=Admin+Utama&background=0D8ABC&color=fff" class="w-10 h-10 rounded-full border">
+                </div>
+            </header>
+
+            <div class="p-8">
+                <section x-show="currentTab === 'dashboard'" class="space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                            <p class="text-slate-400 text-xs font-bold uppercase">Total Risiko</p>
+                            <h3 class="text-3xl font-black mt-1" x-text="risks.length"></h3>
+                            <p class="text-blue-500 text-xs mt-2"><i class="fas fa-arrow-up"></i> 12% dari bulan lalu</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                            <p class="text-slate-400 text-xs font-bold uppercase">Risiko Tinggi</p>
+                            <h3 class="text-3xl font-black mt-1 text-red-600">3</h3>
+                            <p class="text-slate-400 text-xs mt-2">Butuh tindakan segera</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                            <p class="text-slate-400 text-xs font-bold uppercase">Mitigasi Selesai</p>
+                            <h3 class="text-3xl font-black mt-1 text-green-600">19</h3>
+                            <p class="text-green-500 text-xs mt-2">Efektivitas 85%</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                            <p class="text-slate-400 text-xs font-bold uppercase">Unit Terpantau</p>
+                            <h3 class="text-3xl font-black mt-1" x-text="unitStats.length"></h3>
+                            <p class="text-slate-400 text-xs mt-2">Seluruh organisasi</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="bg-white p-8 rounded-[2.5rem] border shadow-sm">
+                            <h4 class="font-bold mb-6 flex items-center justify-between">
+                                Distribusi Level Risiko
+                                <i class="fas fa-chart-pie text-slate-300"></i>
+                            </h4>
+                            <div class="h-64">
+                                <canvas id="riskPieChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-8 rounded-[2.5rem] border shadow-sm">
+                            <h4 class="font-bold mb-6 flex items-center justify-between">
+                                Tren Risiko per Unit
+                                <i class="fas fa-chart-bar text-slate-300"></i>
+                            </h4>
+                            <div class="h-64">
+                                <canvas id="unitBarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section x-show="currentTab === 'penilaian'">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="relative w-72">
+                            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" x-model="searchQuery" placeholder="Cari risiko..." class="w-full pl-11 pr-4 py-2 bg-white border rounded-xl outline-none">
+                        </div>
+                        <button @click="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-200">
+                            <i class="fas fa-plus"></i> Tambah Risiko
+                        </button>
+                    </div>
+                    <div class="bg-white rounded-[2rem] border shadow-sm overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 text-slate-400 text-[11px] uppercase tracking-widest font-bold border-b">
+                                <tr>
+                                    <th class="px-6 py-4">ID</th>
+                                    <th class="px-6 py-4">Nama Risiko</th>
+                                    <th class="px-6 py-4">Unit</th>
+                                    <th class="px-6 py-4 text-center">Skor</th>
+                                    <th class="px-6 py-4 text-center">Level</th>
+                                    <th class="px-6 py-4 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y text-sm">
+                                <template x-for="(risk, index) in filteredRisks" :key="risk.id">
+                                    <tr class="hover:bg-slate-50 transition-colors">
+                                        <td class="px-6 py-4 font-mono font-bold text-blue-600" x-text="risk.id"></td>
+                                        <td class="px-6 py-4">
+                                            <p class="font-bold text-slate-700" x-text="risk.name"></p>
+                                            <p class="text-[10px] text-slate-400" x-text="'Dampak: ' + risk.impact_desc"></p>
+                                        </td>
+                                        <td class="px-6 py-4" x-text="risk.unit"></td>
+                                        <td class="px-6 py-4 text-center font-bold" x-text="risk.prob * risk.impact"></td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span :class="getLevelColor(risk.prob * risk.impact)" class="px-3 py-1 rounded-full text-[10px] font-bold uppercase" x-text="getLevelName(risk.prob * risk.impact)"></span>
+                                        </td>
+                                        <td class="px-6 py-4 text-right space-x-2">
+                                            <button @click="editRisk(risk)" class="text-slate-400 hover:text-blue-600"><i class="fas fa-edit"></i></button>
+                                            <button @click="deleteRisk(index)" class="text-slate-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section x-show="currentTab === 'pemantauan'">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <template x-for="stat in unitStats">
+                            <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                                <h4 class="text-slate-400 text-xs font-bold uppercase mb-2" x-text="stat.unit"></h4>
+                                <div class="flex justify-between items-end">
+                                    <span class="text-3xl font-black text-slate-800" x-text="stat.total"></span>
+                                    <span class="text-green-500 text-xs font-bold" x-text="stat.percent + '% Selesai'"></span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
+                                    <div class="bg-green-500 h-full" :style="'width: ' + stat.percent + '%'"></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="bg-white rounded-[2rem] border shadow-sm overflow-hidden">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-[10px] font-bold uppercase text-slate-400 border-b">
+                                <tr>
+                                    <th class="px-6 py-4">Nama Unit</th>
+                                    <th class="px-6 py-4 text-center">Aktif</th>
+                                    <th class="px-6 py-4 text-center">Selesai</th>
+                                    <th class="px-6 py-4 text-center">Belum Tindak Lanjut</th>
+                                    <th class="px-6 py-4">Reviu Terakhir</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="u in unitStats">
+                                    <tr class="border-b last:border-0 hover:bg-slate-50">
+                                        <td class="px-6 py-4 font-bold" x-text="u.unit"></td>
+                                        <td class="px-6 py-4 text-center" x-text="u.total"></td>
+                                        <td class="px-6 py-4 text-center text-green-600 font-bold" x-text="u.done"></td>
+                                        <td class="px-6 py-4 text-center text-red-500 font-bold" x-text="u.total - u.done"></td>
+                                        <td class="px-6 py-4 text-slate-400" x-text="u.lastReview"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section x-show="['mitigasi', 'profil'].includes(currentTab)">
+                    <div class="bg-blue-50 border-2 border-dashed border-blue-200 rounded-[3rem] p-20 text-center">
+                        <i class="fas fa-tools text-4xl text-blue-300 mb-4"></i>
+                        <h3 class="text-xl font-bold text-blue-800">Modul Sedang Dikembangkan</h3>
+                        <p class="text-blue-500">Klik "Dashboard" atau "Penilaian Risiko" untuk demo.</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <div x-show="modalOpen" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div @click.away="modalOpen = false" class="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden">
+            <div class="p-8 bg-blue-600 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold" x-text="isEdit ? 'Edit Risiko' : 'Tambah Risiko Baru'"></h3>
+                <button @click="modalOpen = false"><i class="fas fa-times"></i></button>
+            </div>
+            <form @submit.prevent="saveRisk" class="p-8 grid grid-cols-2 gap-4">
+                <div class="col-span-2">
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Nama Risiko</label>
+                    <input type="text" x-model="form.name" required class="w-full p-3 bg-slate-50 border rounded-xl outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Unit Kerja</label>
+                    <select x-model="form.unit" class="w-full p-3 bg-slate-50 border rounded-xl">
+                        <option>Unit TI</option>
+                        <option>Unit SDM</option>
+                        <option>Unit Keuangan</option>
+                        <option>Logistik</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-2">ID Risiko</label>
+                    <input type="text" x-model="form.id" class="w-full p-3 bg-slate-50 border rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Kemungkinan (1-5)</label>
+                    <input type="number" min="1" max="5" x-model.number="form.prob" class="w-full p-3 bg-slate-50 border rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Dampak (1-5)</label>
+                    <input type="number" min="1" max="5" x-model.number="form.impact" class="w-full p-3 bg-slate-50 border rounded-xl">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Penyebab</label>
+                    <textarea x-model="form.cause" class="w-full p-3 bg-slate-50 border rounded-xl h-20"></textarea>
+                </div>
+                <div class="col-span-2 pt-4">
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function riskApp() {
+            return {
+                isLoggedIn: false,
+                currentTab: 'dashboard',
+                modalOpen: false,
+                isEdit: false,
+                searchQuery: '',
+                form: { id: '', name: '', unit: 'Unit TI', prob: 1, impact: 1, impact_desc: '', cause: '' },
+                
+                risks: [
+                    { id: 'R-2406-012', name: 'Kegagalan Server Pusat', unit: 'Unit TI', prob: 3, impact: 5, impact_desc: 'Layanan berhenti total', cause: 'Hardware usang' },
+                    { id: 'R-2406-011', name: 'Keterlambatan Gaji', unit: 'Unit Keuangan', prob: 2, impact: 4, impact_desc: 'Demotivasi karyawan', cause: 'Proses birokrasi' },
+                    { id: 'R-2406-010', name: 'Kebocoran Data Pelanggan', unit: 'Unit TI', prob: 4, impact: 5, impact_desc: 'Denda hukum besar', cause: 'Serangan siber' }
+                ],
+
+                unitStats: [
+                    { unit: 'Unit TI', total: 12, done: 8, percent: 66, lastReview: '10 Mei 2026' },
+                    { unit: 'Unit SDM', total: 5, done: 5, percent: 100, lastReview: '01 Mei 2026' },
+                    { unit: 'Unit Keuangan', total: 8, done: 2, percent: 25, lastReview: '05 Mei 2026' },
+                    { unit: 'Logistik', total: 10, done: 4, percent: 40, lastReview: '08 Mei 2026' }
+                ],
+
+                handleLogin() { this.isLoggedIn = true; },
+                
+                initCharts() {
+                    this.$nextTick(() => {
+                        // Pie Chart
+                        new Chart(document.getElementById('riskPieChart'), {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Rendah', 'Sedang', 'Tinggi'],
+                                datasets: [{
+                                    data: [10, 5, 3],
+                                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                                    borderWidth: 0
+                                }]
+                            },
+                            options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                        });
+
+                        // Bar Chart
+                        new Chart(document.getElementById('unitBarChart'), {
+                            type: 'bar',
+                            data: {
+                                labels: ['Unit TI', 'SDM', 'Keuangan', 'Logistik'],
+                                datasets: [{
+                                    label: 'Jumlah Risiko',
+                                    data: [12, 5, 8, 10],
+                                    backgroundColor: '#3b82f6',
+                                    borderRadius: 10
+                                }]
+                            },
+                            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                        });
+                    });
+                },
+
+                get filteredRisks() {
+                    return this.risks.filter(r => r.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || r.id.includes(this.searchQuery));
+                },
+
+                getLevelName(score) {
+                    if (score <= 5) return 'Rendah';
+                    if (score <= 12) return 'Sedang';
+                    return 'Tinggi';
+                },
+
+                getLevelColor(score) {
+                    if (score <= 5) return 'bg-green-100 text-green-600';
+                    if (score <= 12) return 'bg-yellow-100 text-yellow-600';
+                    return 'bg-red-100 text-red-600';
+                },
+
+                openModal() {
+                    this.isEdit = false;
+                    this.form = { id: 'R-2024-' + Math.floor(Math.random()*999), name: '', unit: 'Unit TI', prob: 1, impact: 1, impact_desc: '', cause: '' };
+                    this.modalOpen = true;
+                },
+
+                editRisk(risk) {
+                    this.isEdit = true;
+                    this.form = { ...risk };
+                    this.modalOpen = true;
+                },
+
+                saveRisk() {
+                    if (this.isEdit) {
+                        const index = this.risks.findIndex(r => r.id === this.form.id);
+                        this.risks[index] = { ...this.form };
+                    } else {
+                        this.risks.push({ ...this.form });
+                    }
+                    this.modalOpen = false;
+                },
+
+                deleteRisk(index) {
+                    if(confirm('Hapus data ini?')) this.risks.splice(index, 1);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
